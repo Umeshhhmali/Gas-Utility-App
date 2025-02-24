@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg fixed w-full z-10">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-3xl font-bold text-gray-800">Gas Agency</span>
+                </div>
+                <form method="POST" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="pt-20 px-4 md:px-8 lg:px-16">
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Admin Profile Section -->
+            <div class="w-full md:w-1/3">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="text-center">
+                        <img src="{% static 'img/AdminProfile.jpg' %}" 
+                             class="w-32 h-32 rounded-full mx-auto mb-4">
+                        <h2 class="text-2xl font-bold mb-2">Admin</h2>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-600">Email:</label>
+                            <p class="font-medium">{{req.email}}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-600">Phone:</label>
+                            <p class="font-medium">+91 {{req.phone}}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-600">Address:</label>
+                            <p class="font-medium">{{req.address}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Requests Section -->
+            <div class="w-full md:w-2/3">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-bold mb-6">Service Requests</h2>
+                    
+                    <!-- Requests Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Sample Request 1 -->
+                                    {% for s in serv %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ s.user.name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ s.service_type }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ s.requested_at }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span id="status-{{ s.id }}" 
+                                                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                  {% if s.status == 'pending' %} bg-red-100 text-red-800 
+                                                  {% elif s.status == 'inprogress' %} bg-yellow-100 text-yellow-800 
+                                                  {% else %} bg-green-100 text-green-800 {% endif %}">
+                                                {{ s.status }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <select class="border rounded px-2 py-1 status-dropdown" onchange="updateStatus(this, '{{ s.id }}')">
+                                                <option value="pending" >Pending</option>
+                                                <option value="inprogress" >In Progress</option>
+                                                <option value="resolved" >Resolved</option>
+                                            </select>                                                        
+                                        </td>                                        
+                                    </tr>
+                                    {% empty %}
+                                    <p class="text-gray-500">No previous requests found.</p>
+                                    {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(selectElement, requestId) {
+            const statusSpan = selectElement.closest('tr').querySelector('td:nth-child(4) span');
+            const newStatus = selectElement.value;
+    
+            statusSpan.className = `px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                newStatus === 'pending' ? 'bg-red-100 text-red-800' :
+                newStatus === 'inprogress' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-green-100 text-green-800'
+            }`;
+    
+            statusSpan.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+    
+            fetch(`/update-status/${requestId}/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"  
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("Failed to update status in the database.");
+                }
+            })
+            .catch(error => console.error("Error updating status:", error));
+        }
+    </script>    
+</body>
+</html>
