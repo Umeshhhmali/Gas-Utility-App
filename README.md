@@ -55,8 +55,8 @@ This is a **Django-based web application** that allows customers to submit and t
 
 ### **3️⃣ Access the Application**
 
-- **User Login:** `http://127.0.0.1:8000/`
-- **Admin Panel:** `http://127.0.0.1:8000/admin/`
+- **User Login:** `http://127.0.0.1:8000/accounts/login`
+- **Admin Panel:** `http://127.0.0.1:8000/accounts/login`
 
 ---
 
